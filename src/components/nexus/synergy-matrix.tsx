@@ -14,7 +14,7 @@ import { useNexusStore } from '@/lib/nexus-store';
 
 const getDaysInMonth = () => 30;
 const getChannelIcon = (channel: string) => {
-  const icons: Record<string, string> = {
+  const icons: Record<string, React.ReactNode> = {
     booking: '🏨',
     airbnb: '🏠',
     web: '🌐',
@@ -120,7 +120,7 @@ function ReservationBlock({ reservation, left, width }: ReservationBlockProps) {
                 <span className="font-medium text-foreground">{reservation.floor}</span>
               </div>
               <div className="flex items-center gap-2 text-xs">
-                <span className="text-muted-foreground">{getChannelIcon(reservation.channel)}</span>
+                <span className="text-muted-foreground">{String(getChannelIcon(reservation.channel))}</span>
                 <span className="font-medium text-foreground capitalize">{reservation.channel}</span>
               </div>
             </div>
