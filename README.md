@@ -1,6 +1,12 @@
-# 🚀 Welcome to Z.ai Code Scaffold
+# 🏨 Sistema de Reservas Hoteleras
 
-A modern, production-ready web application scaffold powered by cutting-edge technologies, designed to accelerate your development with [Z.ai](https://chat.z.ai)'s AI-powered coding assistance.
+Sistema de gestión de reservas para hoteles, desarrollado con Next.js 16, Prisma y Bun.
+
+## 🚀 Deploy
+
+**Live URL:** https://admin-hotel-kappa.vercel.app
+
+**GitHub:** https://github.com/rojasforerojuandaniel-eng/ADMIN-HOTEL
 
 ## ✨ Technology Stack
 
@@ -59,6 +65,9 @@ This scaffold provides a robust foundation built with:
 ```bash
 # Install dependencies
 bun install
+
+# Inicializar base de datos
+npx prisma db push
 
 # Start development server
 bun run dev
