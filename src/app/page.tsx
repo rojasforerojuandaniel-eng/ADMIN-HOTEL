@@ -19,6 +19,7 @@ import {
   Zap,
   Globe,
   Building2,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -65,13 +66,38 @@ const itemVariants = {
 };
 
 // ============================================
+// LOADING SKELETON
+// ============================================
+
+function LoadingSkeleton() {
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="text-center space-y-4">
+        <div className="flex items-center justify-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+            <Building2 className="w-6 h-6 text-white" />
+          </div>
+          <h1 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-violet-400 bg-clip-text text-transparent">
+            RHYNODE NEXUS
+          </h1>
+        </div>
+        <div className="flex items-center justify-center gap-2 text-muted-foreground">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          <span className="text-sm">Inicializando sistema...</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================
 // RHYNODE NEXUS - MAIN PAGE
 // ============================================
 
 export default function RhynodeNexus() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [time, setTime] = useState(new Date());
-  const [notificationCount, setNotificationCount] = useState(3);
+  const [mounted, setMounted] = useState(false);
+  const [time, setTime] = useState('');
 
   const updateTime = useNexusStore((state) => state.updateTime);
   const activeTab = useNexusStore((state) => state.activeTab);
@@ -80,23 +106,22 @@ export default function RhynodeNexus() {
   const setCurrentBranch = useNexusStore((state) => state.setCurrentBranch);
   const branches = useNexusStore((state) => state.branches);
 
+  // Solo ejecutar en el cliente
   useEffect(() => {
+    setMounted(true);
+    updateTime();
     const t = setInterval(() => {
       const now = new Date();
-      setTime(now);
+      setTime(now.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }));
       updateTime();
     }, 1000);
     return () => clearInterval(t);
-  }, [updateTime]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const formatTime = (date: Date) => {
-    return new Intl.DateTimeFormat('es-CO', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: true,
-    }).format(date);
-  };
+  // Loading skeleton durante SSR y primer render
+  if (!mounted) {
+    return <LoadingSkeleton />;
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -149,11 +174,9 @@ export default function RhynodeNexus() {
 
             <Button variant="ghost" size="sm" className="relative h-9 w-9">
               <Bell className="w-4 h-4" />
-              {notificationCount > 0 && (
-                <Badge className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center p-0 text-[10px] bg-rose-500">
-                  {notificationCount}
-                </Badge>
-              )}
+              <Badge className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center p-0 text-[10px] bg-rose-500">
+                3
+              </Badge>
             </Button>
 
             <Button variant="ghost" size="sm" className="h-9 w-9">
@@ -340,7 +363,7 @@ export default function RhynodeNexus() {
           </div>
           <div className="flex items-center gap-2">
             <Zap className="w-3 h-3 text-cyan-400" />
-            <span>{formatTime(time)}</span>
+            <span suppressHydrationWarning>{time}</span>
           </div>
         </div>
       </footer>

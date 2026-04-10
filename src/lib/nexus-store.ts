@@ -3,6 +3,7 @@
 // ============================================
 
 import { create } from 'zustand';
+import { useShallow } from 'zustand/shallow';
 
 // ============================================
 // TIPOS
@@ -102,7 +103,7 @@ interface NexusStore {
 }
 
 // ============================================
-// DATOS MOCK
+// DATOS MOCK (TIMESTAMPS ESTÁTICOS PARA EVITAR HYDRATION MISMATCH)
 // ============================================
 
 const mockBranches: Branch[] = [
@@ -141,18 +142,19 @@ const mockReservations: Reservation[] = [
   { id: 'res5', code: 'RHN-2024-0878', guest: mockGuests[4], room: '303', floor: 3, checkIn: '2024-12-23', checkOut: '2024-12-27', status: 'pending', channel: 'phone', total: 1402000, paid: 0, currency: 'COP' },
 ];
 
+// Timestamps estáticos — NO usar new Date() aquí para evitar hydration mismatch
 const mockEntropy: EntropyItem[] = [
-  { id: 'e1', type: 'maintenance', room: '302', description: 'Aire Acondicionado fallando (Reportado por IoT)', severity: 'high', resolved: false, timestamp: new Date(Date.now() - 3600000).toISOString() },
-  { id: 'e2', type: 'cleaning_delay', room: '103', description: 'Limpieza habitación 103 atrasada 45 min', severity: 'medium', resolved: false, timestamp: new Date(Date.now() - 7200000).toISOString() },
-  { id: 'e3', type: 'complaint', room: '201', description: 'Huésped VIP reporta ruido excesivo', severity: 'high', resolved: false, timestamp: new Date(Date.now() - 5400000).toISOString() },
+  { id: 'e1', type: 'maintenance', room: '302', description: 'Aire Acondicionado fallando (Reportado por IoT)', severity: 'high', resolved: false, timestamp: '2024-12-22T14:00:00.000Z' },
+  { id: 'e2', type: 'cleaning_delay', room: '103', description: 'Limpieza habitación 103 atrasada 45 min', severity: 'medium', resolved: false, timestamp: '2024-12-22T12:00:00.000Z' },
+  { id: 'e3', type: 'complaint', room: '201', description: 'Huésped VIP reporta ruido excesivo', severity: 'high', resolved: false, timestamp: '2024-12-22T13:00:00.000Z' },
 ];
 
 const mockMetrics: SystemMetric[] = [
-  { id: 'm1', type: 'revpar', value: 285000, change: 7.5, timestamp: new Date().toISOString() },
-  { id: 'm2', type: 'occupancy', value: 78, change: 8.3, timestamp: new Date().toISOString() },
-  { id: 'm3', type: 'revenue', value: 12400000, change: 11.2, timestamp: new Date().toISOString() },
-  { id: 'm4', type: 'reservations', value: 8, change: 33, timestamp: new Date().toISOString() },
-  { id: 'm5', type: 'satisfaction', value: 94, change: 2.1, timestamp: new Date().toISOString() },
+  { id: 'm1', type: 'revpar', value: 285000, change: 7.5, timestamp: '2024-12-22T15:00:00.000Z' },
+  { id: 'm2', type: 'occupancy', value: 78, change: 8.3, timestamp: '2024-12-22T15:00:00.000Z' },
+  { id: 'm3', type: 'revenue', value: 12400000, change: 11.2, timestamp: '2024-12-22T15:00:00.000Z' },
+  { id: 'm4', type: 'reservations', value: 8, change: 33, timestamp: '2024-12-22T15:00:00.000Z' },
+  { id: 'm5', type: 'satisfaction', value: 94, change: 2.1, timestamp: '2024-12-22T15:00:00.000Z' },
 ];
 
 // ============================================
@@ -162,7 +164,7 @@ const mockMetrics: SystemMetric[] = [
 export const useNexusStore = create<NexusStore>()((set) => ({
   currentBranch: 'bog',
   activeTab: 'dashboard',
-  time: new Date().toISOString(),
+  time: '', // Se inicializa en el cliente via updateTime()
   branches: mockBranches,
   rooms: mockRooms,
   reservations: mockReservations,
@@ -211,7 +213,7 @@ export const useNexusStore = create<NexusStore>()((set) => ({
 }));
 
 // ============================================
-// SELECTORES
+// SELECTORES (con useShallow para evitar re-renders infinitos)
 // ============================================
 
 export const useCurrentBranch = () => useNexusStore((state) => {
@@ -219,13 +221,19 @@ export const useCurrentBranch = () => useNexusStore((state) => {
   return branch || state.branches[0];
 });
 
+// Primitivo — no necesita shallow
 export const useOccupancyRate = () => useNexusStore((state) => {
   const occupied = state.rooms.filter((r) => r.status === 'occupied').length;
   return (occupied / state.rooms.length) * 100;
 });
 
+// Array — usar useShallow para shallow comparison
 export const useActiveReservations = () =>
-  useNexusStore((state) => state.reservations.filter((r) => ['confirmed', 'checked_in'].includes(r.status)));
+  useNexusStore(useShallow((state) =>
+    state.reservations.filter((r) => r.status === 'confirmed' || r.status === 'checked_in')
+  ));
 
 export const useUnresolvedEntropy = () =>
-  useNexusStore((state) => state.entropyItems.filter((e) => !e.resolved));
+  useNexusStore(useShallow((state) =>
+    state.entropyItems.filter((e) => !e.resolved)
+  ));

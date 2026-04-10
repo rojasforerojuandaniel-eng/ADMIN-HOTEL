@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Bar, BarChart, Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -63,6 +64,12 @@ function CustomTooltip({ active, payload, label }: ChartTooltipProps) {
 // ============================================
 
 export function RevenueChart() {
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const totalRevenue = chartData.reduce((acc, curr) => acc + curr.ingresos, 0);
   const avgEntropy = Math.round(chartData.reduce((acc, curr) => acc + curr.entropia, 0) / chartData.length);
   const totalReservations = chartData.reduce((acc, curr) => acc + curr.reservas, 0);
@@ -108,64 +115,70 @@ export function RevenueChart() {
             </div>
           </div>
 
-          {/* Gráfico */}
+          {/* Gráfico — solo renderizar después de mount */}
           <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" />
-                <XAxis
-                  dataKey="day"
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  yAxisId="left"
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(value) => `$${(value / 1000000).toFixed(0)}M`}
-                />
-                <YAxis
-                  yAxisId="right"
-                  orientation="right"
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(value) => `${value}%`}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend />
-                <Line
-                  yAxisId="left"
-                  type="monotone"
-                  dataKey="ingresos"
-                  stroke="hsl(180, 100%, 50%)"
-                  strokeWidth={2}
-                  dot={{ fill: 'hsl(180, 100%, 50%)', strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, stroke: 'hsl(180, 100%, 50%)', strokeWidth: 2 }}
-                  name="Ingresos"
-                  animationDuration={1500}
-                  animationEasing="ease-out"
-                />
-                <Line
-                  yAxisId="right"
-                  type="monotone"
-                  dataKey="entropia"
-                  stroke="hsl(280, 100%, 60%)"
-                  strokeWidth={2}
-                  strokeDasharray="5 5"
-                  dot={{ fill: 'hsl(280, 100%, 60%)', strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, stroke: 'hsl(280, 100%, 60%)', strokeWidth: 2 }}
-                  name="Entropía"
-                  animationDuration={1500}
-                  animationEasing="ease-out"
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            {mounted ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" />
+                  <XAxis
+                    dataKey="day"
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    yAxisId="left"
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => `$${(value / 1000000).toFixed(0)}M`}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => `${value}%`}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="ingresos"
+                    stroke="hsl(180, 100%, 50%)"
+                    strokeWidth={2}
+                    dot={{ fill: 'hsl(180, 100%, 50%)', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, stroke: 'hsl(180, 100%, 50%)', strokeWidth: 2 }}
+                    name="Ingresos"
+                    animationDuration={1500}
+                    animationEasing="ease-out"
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="entropia"
+                    stroke="hsl(280, 100%, 60%)"
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    dot={{ fill: 'hsl(280, 100%, 60%)', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, stroke: 'hsl(280, 100%, 60%)', strokeWidth: 2 }}
+                    name="Entropía"
+                    animationDuration={1500}
+                    animationEasing="ease-out"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+                Cargando gráfico...
+              </div>
+            )}
           </div>
 
           {/* Nota de Entropía */}
