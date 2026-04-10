@@ -1,0 +1,404 @@
+// This is your Prisma schema file,
+// Sistema de Reservas Hoteleras - Enfoque de Teoría de Sistemas
+// Aplicando: Holístico, Sinergia, Homeostasis, Entropía, Negentropía,
+// Equifinalidad, Jerarquía, Organicidad, Multifinalidad, Adaptabilidad
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// JERARQUÍA: Hotel -> Pisos -> Habitaciones -> Amenidades
+// ============================================
+
+// Nivel 1: Hotel (Entidad máxima del sistema)
+model Hotel {
+  id          String   @id @default(cuid())
+  nombre      String
+  direccion   String
+  telefono    String
+  email       String
+  estrellas   Int      @default(5)
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relaciones (Organicidad - el hotel crece y se adapta)
+  pisos       Piso[]
+  habitaciones Habitacion[]
+  reservas    Reserva[]
+  huespedes   Huesped[]
+  tarifas     Tarifa[]
+  notificaciones Notificacion[]
+  metricas    Metrica[]
+}
+
+// Nivel 2: Pisos del hotel
+model Piso {
+  id          String   @id @default(cuid())
+  numero      Int
+  nombre      String?  // Ej: "Piso Ejecutivo"
+  hotelId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  hotel       Hotel    @relation(fields: [hotelId], references: [id])
+  habitaciones Habitacion[]
+  
+  @@unique([hotelId, numero])
+}
+
+// Nivel 3: Habitaciones (Unidad básica de alojamiento)
+model Habitacion {
+  id              String   @id @default(cuid())
+  numero          String   // Ej: "101", "202A"
+  tipo            TipoHabitacion
+  capacidad       Int      @default(2)
+  precioBase      Float
+  estado          EstadoHabitacion @default(DISPONIBLE)
+  descripcion     String?
+  hotelId         String
+  pisoId          String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relaciones
+  hotel           Hotel    @relation(fields: [hotelId], references: [id])
+  piso            Piso     @relation(fields: [pisoId], references: [id])
+  amenidades      AmenidadHabitacion[]
+  reservas        Reserva[]
+  mantenimientos  Mantenimiento[]
+  imagenes        ImagenHabitacion[]
+  
+  @@unique([hotelId, numero])
+}
+
+// Nivel 4: Amenidades de cada habitación
+model AmenidadHabitacion {
+  id            String   @id @default(cuid())
+  nombre        String   // WiFi, TV, Minibar, etc.
+  descripcion   String?
+  habitacionId  String
+  createdAt     DateTime @default(now())
+  
+  habitacion    Habitacion @relation(fields: [habitacionId], references: [id])
+}
+
+// Imágenes de habitaciones
+model ImagenHabitacion {
+  id            String   @id @default(cuid())
+  url           String
+  descripcion   String?
+  principal     Boolean  @default(false)
+  habitacionId  String
+  createdAt     DateTime @default(now())
+  
+  habitacion    Habitacion @relation(fields: [habitacionId], references: [id])
+}
+
+// ============================================
+// INPUT: Huéspedes (Entrada principal del sistema)
+// ============================================
+
+model Huesped {
+  id              String   @id @default(cuid())
+  nombre          String
+  apellido        String
+  email           String
+  telefono        String?
+  documento       String?  // DNI/Pasaporte
+  tipoDocumento   String?  @default("DNI")
+  nacionalidad    String?
+  fechaNacimiento DateTime?
+  direccion       String?
+  preferencias    String?  // JSON con preferencias
+  vip             Boolean  @default(false)
+  notas           String?
+  hotelId         String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relaciones
+  hotel           Hotel    @relation(fields: [hotelId], references: [id])
+  reservas        Reserva[]
+  historial       HistorialHuesped[]
+  
+  @@unique([hotelId, email])
+}
+
+// Historial de huésped (Organicidad - registro del ciclo de vida)
+model HistorialHuesped {
+  id          String   @id @default(cuid())
+  accion      String   // checkin, checkout, queja, elogio, etc.
+  descripcion String?
+  fecha       DateTime @default(now())
+  huespedId   String
+  reservaId   String?
+  
+  huesped     Huesped  @relation(fields: [huespedId], references: [id])
+  reserva     Reserva? @relation(fields: [reservaId], references: [id])
+}
+
+// ============================================
+// PROCESO: Reservas (Transformación principal)
+// ============================================
+
+model Reserva {
+  id              String   @id @default(cuid())
+  codigo          String   @unique // Código único de reserva
+  fechaInicio     DateTime
+  fechaFin        DateTime
+  numHuespedes    Int      @default(1)
+  estado          EstadoReserva @default(PENDIENTE)
+  precioTotal     Float
+  descuento       Float    @default(0)
+  impuestos       Float    @default(0)
+  totalPagar      Float
+  notas           String?
+  origen          OrigenReserva @default(WEB) // Equifinalidad
+  hotelId         String
+  huespedId       String
+  habitacionId    String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  confirmadaEn    DateTime?
+  canceladaEn     DateTime?
+  checkinReal     DateTime?
+  checkoutReal    DateTime?
+  
+  // Relaciones (Sinergia - múltiples elementos trabajando juntos)
+  hotel           Hotel    @relation(fields: [hotelId], references: [id])
+  huesped         Huesped  @relation(fields: [huespedId], references: [id])
+  habitacion      Habitacion @relation(fields: [habitacionId], references: [id])
+  pagos           Pago[]
+  serviciosExtra  ServicioExtra[]
+  historial       HistorialHuesped[]
+  notificaciones  NotificacionReserva[]
+}
+
+// Pagos asociados a reservas
+model Pago {
+  id              String   @id @default(cuid())
+  monto           Float
+  metodo          MetodoPago
+  estado          EstadoPago @default(PENDIENTE)
+  referencia      String?  // Número de transacción
+  notas           String?
+  reservaId       String
+  fechaPago       DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  reserva         Reserva @relation(fields: [reservaId], references: [id])
+}
+
+// Servicios extra durante la estancia
+model ServicioExtra {
+  id              String   @id @default(cuid())
+  nombre          String
+  descripcion     String?
+  precio          Float
+  cantidad        Int      @default(1)
+  total           Float
+  fecha           DateTime @default(now())
+  reservaId       String
+  createdAt       DateTime @default(now())
+  
+  reserva         Reserva @relation(fields: [reservaId], references: [id])
+}
+
+// ============================================
+// HOMEOSTASIS: Tarifas dinámicas (Equilibrio)
+// ============================================
+
+model Tarifa {
+  id              String   @id @default(cuid())
+  nombre          String   // "Temporada Alta", "Promo Verano"
+  tipoHabitacion  TipoHabitacion
+  precio          Float
+  multiplicador   Float    @default(1.0) // Para ajustes dinámicos
+  fechaInicio     DateTime
+  fechaFin        DateTime
+  activa          Boolean  @default(true)
+  hotelId         String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  hotel           Hotel @relation(fields: [hotelId], references: [id])
+}
+
+// ============================================
+// NEGENTROPÍA: Mantenimiento (Contrarrestar desorden)
+// ============================================
+
+model Mantenimiento {
+  id              String   @id @default(cuid())
+  tipo            TipoMantenimiento
+  descripcion     String
+  estado          EstadoMantenimiento @default(PROGRAMADO)
+  prioridad       Prioridad @default(MEDIA)
+  fechaProgramada DateTime
+  fechaInicio     DateTime?
+  fechaFin        DateTime?
+  costo           Float?
+  notas           String?
+  habitacionId    String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  habitacion      Habitacion @relation(fields: [habitacionId], references: [id])
+}
+
+// ============================================
+// ADAPTABILIDAD: Métricas y monitoreo
+// ============================================
+
+model Metrica {
+  id              String   @id @default(cuid())
+  tipo            TipoMetrica
+  valor           Float
+  fecha           DateTime @default(now())
+  hotelId         String
+  datos           String?  // JSON con datos adicionales
+  createdAt       DateTime @default(now())
+  
+  hotel           Hotel @relation(fields: [hotelId], references: [id])
+}
+
+// ============================================
+// NOTIFICACIONES: Sistema de alertas
+// ============================================
+
+model Notificacion {
+  id              String   @id @default(cuid())
+  tipo            TipoNotificacion
+  titulo          String
+  mensaje         String
+  leida           Boolean  @default(false)
+  prioridad       Prioridad @default(MEDIA)
+  hotelId         String
+  createdAt       DateTime @default(now())
+  
+  hotel           Hotel @relation(fields: [hotelId], references: [id])
+}
+
+model NotificacionReserva {
+  id              String   @id @default(cuid())
+  tipo            String   // confirmacion, recordatorio, cancelacion
+  enviado         Boolean  @default(false)
+  fechaEnvio      DateTime?
+  reservaId       String
+  createdAt       DateTime @default(now())
+  
+  reserva         Reserva @relation(fields: [reservaId], references: [id])
+}
+
+// ============================================
+// ENUMS: Tipos y Estados
+// ============================================
+
+enum TipoHabitacion {
+  SIMPLE
+  DOBLE
+  SUITE
+  SUITE_JUNIOR
+  SUITE_PRESIDENCIAL
+  FAMILIAR
+  MATRIMONIAL
+}
+
+enum EstadoHabitacion {
+  DISPONIBLE
+  OCUPADA
+  MANTENIMIENTO
+  LIMPIEZA
+  FUERA_DE_SERVICIO
+  RESERVADA
+}
+
+enum EstadoReserva {
+  PENDIENTE
+  CONFIRMADA
+  CHECKIN
+  CHECKOUT
+  CANCELADA
+  NO_SHOW
+  MODIFICADA
+}
+
+enum OrigenReserva {
+  WEB          // Sitio web del hotel
+  TELEFONO     // Llamada telefónica
+  PRESENCIAL   // En el hotel
+  APP          // Aplicación móvil
+  AGENCIA      // Agencia de viajes
+  OTRO         // Otros canales
+}
+
+enum MetodoPago {
+  EFECTIVO
+  TARJETA_CREDITO
+  TARJETA_DEBITO
+  TRANSFERENCIA
+  PAYPAL
+  DEPOSITO
+  MIXTO
+}
+
+enum EstadoPago {
+  PENDIENTE
+  PROCESANDO
+  COMPLETADO
+  RECHAZADO
+  REEMBOLSADO
+  CANCELADO
+}
+
+enum TipoMantenimiento {
+  PREVENTIVO
+  CORRECTIVO
+  LIMPIEZA
+  REPARACION
+  RENOVACION
+  INSPECCION
+}
+
+enum EstadoMantenimiento {
+  PROGRAMADO
+  EN_PROCESO
+  COMPLETADO
+  CANCELADO
+  POSTPUESTO
+}
+
+enum Prioridad {
+  BAJA
+  MEDIA
+  ALTA
+  URGENTE
+}
+
+enum TipoMetrica {
+  OCUPACION
+  INGRESOS
+  RESERVAS
+  CANCELACIONES
+  SATISFACCION
+  TIEMPO_ESTANCIA
+  TARIFA_PROMEDIO
+  REVPAR
+}
+
+enum TipoNotificacion {
+  SISTEMA
+  RESERVA
+  PAGO
+  MANTENIMIENTO
+  ALERTA
+  RECORDATORIO
+}

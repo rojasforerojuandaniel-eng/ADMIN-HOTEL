@@ -1,0 +1,41 @@
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+import { Toaster } from "@/components/ui/toaster";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "Sistema de Reservas Hoteleras | Teoría de Sistemas",
+  description: "Sistema integral de gestión hotelera basado en los principios de la Teoría de Sistemas: Holístico, Sinergia, Homeostasis, Entropía, Negentropía, Equifinalidad, Jerarquía, Organicidad, Multifinalidad y Adaptabilidad.",
+  keywords: ["Hotel", "Reservas", "Teoría de Sistemas", "Gestión Hotelera", "Check-in", "Check-out"],
+  authors: [{ name: "Sistema Hotelero" }],
+  icons: {
+    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏨</text></svg>",
+  },
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="es" suppressHydrationWarning>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+      >
+        {children}
+        <Toaster />
+      </body>
+    </html>
+  );
+}

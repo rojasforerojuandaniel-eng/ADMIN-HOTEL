@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rhynode PMS - Sistema Hotelero</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #0a0a0f; color: #e5e5e5; font-family: system-ui, sans-serif; }
+    .glass { background: rgba(20,20,30,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+    .glow-green { box-shadow: 0 0 20px rgba(52,211,153,0.3); }
+    .status-available { background: rgba(52,211,153,0.2); color: #34d399; }
+    .status-occupied { background: rgba(56,189,248,0.2); color: #38bdf8; }
+    .status-cleaning { background: rgba(251,191,36,0.2); color: #fbbf24; }
+    .status-maintenance { background: rgba(244,63,94,0.2); color: #f43f5e; }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div id="app"></div>
+  
+  <script>
+    // Data
+    const branches = [
+      { id: 'bog', name: 'Rhynode Bogotá', rooms: 45 },
+      { id: 'gir', name: 'Rhynode Girardot', rooms: 28 },
+    ];
+
+    const metrics = [
+      { name: 'RevPAR', value: '$285,000', change: '+7.5%' },
+      { name: 'Ocupación', value: '78%', change: '+8.3%' },
+      { name: 'Ingresos Hoy', value: '$12.4M', change: '+11.2%' },
+      { name: 'Reservas', value: '8', change: '+33%' },
+    ];
+
+    const rooms = [
+      { number: '101', type: 'Sencilla', floor: 1, status: 'available', price: 180000 },
+      { number: '102', type: 'Sencilla', floor: 1, status: 'occupied', price: 180000, guest: 'Carlos M.' },
+      { number: '103', type: 'Doble', floor: 1, status: 'cleaning', price: 280000 },
+      { number: '201', type: 'Suite Jr', floor: 2, status: 'occupied', price: 450000, guest: 'María L.' },
+      { number: '202', type: 'Suite Jr', floor: 2, status: 'available', price: 450000 },
+      { number: '203', type: 'Suite', floor: 2, status: 'maintenance', price: 650000 },
+      { number: '301', type: 'Presidencial', floor: 3, status: 'occupied', price: 1200000, guest: 'Roberto V.' },
+      { number: '302', type: 'Presidencial', floor: 3, status: 'available', price: 1200000 },
+    ];
+
+    const reservations = [
+      { code: 'RHN-2024-0847', guest: 'Carlos Mendoza', room: '102', status: 'checked_in', total: 565320 },
+      { code: 'RHN-2024-0852', guest: 'María López', room: '201', status: 'checked_in', total: 1878600 },
+      { code: 'RHN-2024-0863', guest: 'Andrés Torres', room: '204', status: 'confirmed', total: 1517600 },
+      { code: 'RHN-2024-0871', guest: 'Roberto Vargas', room: '301', status: 'checked_in', total: 6486800 },
+      { code: 'RHN-2024-0878', guest: 'Laura Gómez', room: '303', status: 'pending', total: 1402000 },
+    ];
+
+    const entropy = [
+      { desc: 'Fuga de agua en baño hab. 203', severity: 'high' },
+      { desc: 'Limpieza hab. 103 atrasada', severity: 'medium' },
+      { desc: 'Check-out tardío hab. 201', severity: 'low' },
+    ];
+
+    const statusLabels = { available: 'Disponible', occupied: 'Ocupada', cleaning: 'Limpieza', maintenance: 'Mantenimiento' };
+    const statusClasses = { available: 'status-available', occupied: 'status-occupied', cleaning: 'status-cleaning', maintenance: 'status-maintenance' };
+
+    let activeTab = 'dashboard';
+
+    function render() {
+      const app = document.getElementById('app');
+      app.innerHTML = `
+        <header class="sticky top-0 z-50 border-b border-white/10 glass">
+          <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">🏨</div>
+              <span class="font-semibold text-lg">Rhynode</span>
+              <span class="text-xs px-2 py-0.5 rounded border border-white/20 text-white/60">PMS</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-white/50 font-mono">${new Date().toLocaleTimeString('es-CO')}</span>
+              <div class="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-sm">JD</div>
+            </div>
+          </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-4 py-6">
+          <div class="flex gap-2 mb-6">
+            ${['dashboard', 'rooms', 'reservations', 'system', 'theory'].map(t => `
+              <button onclick="activeTab='${t}'; render()" 
+                class="px-4 py-2 rounded-lg text-sm ${activeTab === t ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-white/5 text-white/60 hover:bg-white/10'}">
+                ${t.charAt(0).toUpperCase() + t.slice(1)}
+              </button>
+            `).join('')}
+          </div>
+
+          ${renderContent()}
+        </main>
+      `;
+    }
+
+    function renderContent() {
+      if (activeTab === 'dashboard') {
+        return `
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            ${metrics.map(m => `
+              <div class="glass rounded-xl p-4">
+                <p class="text-xs text-white/50 uppercase mb-1">${m.name}</p>
+                <p class="text-2xl font-bold">${m.value}</p>
+                <p class="text-xs text-emerald-400">${m.change}</p>
+              </div>
+            `).join('')}
+          </div>
+          <div class="grid lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 glass rounded-xl p-6">
+              <h3 class="font-semibold mb-4 flex items-center gap-2">
+                <span class="text-emerald-400">🛡️</span> Health Score (Homeostasis)
+              </h3>
+              <div class="flex items-center gap-8">
+                <div class="relative w-28 h-28">
+                  <svg class="w-28 h-28 -rotate-90">
+                    <circle cx="56" cy="56" r="48" fill="none" stroke="#1a1a2e" stroke-width="10"/>
+                    <circle cx="56" cy="56" r="48" fill="none" stroke="#34d399" stroke-width="10" 
+                      stroke-dasharray="262" stroke-linecap="round"/>
+                  </svg>
+                  <div class="absolute inset-0 flex items-center justify-center">
+                    <span class="text-2xl font-bold">87</span>
+                  </div>
+                </div>
+                <div class="flex-1 space-y-3">
+                  ${[['Financiero', 92], ['Operativo', 84], ['Ocupación', 78], ['Satisfacción', 94]].map(([l, v]) => `
+                    <div>
+                      <div class="flex justify-between text-sm"><span class="text-white/50">${l}</span><span>${v}%</span></div>
+                      <div class="h-1.5 bg-white/10 rounded-full mt-1">
+                        <div class="h-full bg-emerald-500 rounded-full" style="width:${v}%"></div>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+            <div class="glass rounded-xl p-6">
+              <h3 class="font-semibold mb-4">🔔 Feed</h3>
+              <div class="space-y-2">
+                <div class="p-2 rounded border-l-2 border-rose-500 bg-rose-500/10 text-sm">
+                  <p class="font-medium">Overbooking</p>
+                  <p class="text-xs text-white/50">Habitación 205</p>
+                </div>
+                <div class="p-2 rounded border-l-2 border-emerald-500 bg-emerald-500/10 text-sm">
+                  <p class="font-medium">Auto-Resolución</p>
+                  <p class="text-xs text-white/50">Mantenimiento OK</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      if (activeTab === 'rooms') {
+        return `
+          <div class="flex gap-4 mb-4">
+            ${Object.entries({available: 'Disponibles', occupied: 'Ocupadas', cleaning: 'Limpieza', maintenance: 'Mantenimiento'}).map(([k, v]) => `
+              <span class="${statusClasses[k]} px-3 py-1 rounded-full text-xs">${v}: ${rooms.filter(r => r.status === k).length}</span>
+            `).join('')}
+          </div>
+          <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            ${rooms.map(r => `
+              <div class="glass rounded-xl p-4 border-l-2 ${r.status === 'available' ? 'border-l-emerald-500' : r.status === 'occupied' ? 'border-l-sky-500' : r.status === 'cleaning' ? 'border-l-amber-500' : 'border-l-rose-500'}">
+                <div class="flex justify-between mb-2">
+                  <span class="font-semibold">${r.number}</span>
+                  <span class="text-xs px-2 py-0.5 rounded ${statusClasses[r.status]}">${statusLabels[r.status]}</span>
+                </div>
+                <p class="text-sm text-white/50">${r.type} • Piso ${r.floor}</p>
+                <p class="font-medium mt-2">$${r.price.toLocaleString()}/noche</p>
+                ${r.guest ? `<p class="text-xs text-white/50 mt-1">👤 ${r.guest}</p>` : ''}
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      if (activeTab === 'reservations') {
+        return `
+          <div class="glass rounded-xl overflow-hidden">
+            <table class="w-full text-sm">
+              <thead class="border-b border-white/10">
+                <tr>
+                  <th class="text-left p-4 text-xs uppercase text-white/50">Código</th>
+                  <th class="text-left p-4 text-xs uppercase text-white/50">Huésped</th>
+                  <th class="text-left p-4 text-xs uppercase text-white/50">Hab.</th>
+                  <th class="text-left p-4 text-xs uppercase text-white/50">Estado</th>
+                  <th class="text-right p-4 text-xs uppercase text-white/50">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${reservations.map(r => `
+                  <tr class="border-b border-white/5 hover:bg-white/5">
+                    <td class="p-4 font-mono">${r.code}</td>
+                    <td class="p-4">${r.guest}</td>
+                    <td class="p-4">${r.room}</td>
+                    <td class="p-4"><span class="${r.status === 'checked_in' ? 'status-available' : r.status === 'confirmed' ? 'status-occupied' : 'status-cleaning'} px-2 py-0.5 rounded text-xs">${r.status}</span></td>
+                    <td class="p-4 text-right font-medium">$${r.total.toLocaleString()}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+
+      if (activeTab === 'system') {
+        return `
+          <div class="grid lg:grid-cols-2 gap-6">
+            <div class="glass rounded-xl p-6">
+              <h3 class="font-semibold mb-4 text-rose-400">⚠️ Puntos de Entropía</h3>
+              <div class="space-y-3">
+                ${entropy.map(e => `
+                  <div class="p-3 rounded bg-rose-500/10 border border-rose-500/20">
+                    <span class="text-xs px-2 py-0.5 rounded bg-rose-500/20 text-rose-400">${e.severity}</span>
+                    <p class="mt-2 text-sm">${e.desc}</p>
+                    <button class="mt-2 text-xs bg-emerald-600 px-3 py-1 rounded hover:bg-emerald-700">⚡ Auto-Resolver</button>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+            <div class="glass rounded-xl p-6">
+              <h3 class="font-semibold mb-4 text-emerald-400">⚡ Negentropía</h3>
+              <div class="space-y-3">
+                <div class="p-3 rounded bg-emerald-500/10 border border-emerald-500/20">
+                  <span class="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400">Completado</span>
+                  <p class="mt-2 text-sm">Reasignación de habitación 205 → 202</p>
+                </div>
+                <div class="p-3 rounded bg-emerald-500/10 border border-emerald-500/20">
+                  <span class="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400">Ejecutando</span>
+                  <p class="mt-2 text-sm">Priorizando limpieza hab. 103</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      if (activeTab === 'theory') {
+        return `
+          <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold mb-2">Teoría de Sistemas</h1>
+            <p class="text-white/50">10 principios aplicados a la gestión hotelera</p>
+          </div>
+          <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            ${[
+              ['HOLÍSTICO', 'Visión Completa', 'Dashboard con métricas interconectadas'],
+              ['SINERGIA', 'Partes Interconectadas', 'El sistema es más que la suma'],
+              ['HOMEOSTASIS', 'Equilibrio Dinámico', 'Health Score mide estabilidad'],
+              ['ENTROPÍA', 'Medición del Caos', 'Detección de friction points'],
+              ['NEGENTROPÍA', 'Orden desde el Caos', 'Acciones auto-correctivas'],
+              ['JERARQUÍA', 'Estructura en Niveles', 'Gestión multi-sede'],
+            ].map(([p, t, d]) => `
+              <div class="glass rounded-xl p-4 hover:border-emerald-500/30 transition-colors">
+                <span class="text-xs font-mono text-white/50">${p}</span>
+                <h3 class="font-semibold mt-1">${t}</h3>
+                <p class="text-sm text-white/50 mt-2">${d}</p>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      return '';
+    }
+
+    // Update clock every second
+    setInterval(() => {
+      const clock = document.querySelector('.font-mono');
+      if (clock) clock.textContent = new Date().toLocaleTimeString('es-CO');
+    }, 1000);
+
+    render();
+  </script>
+</body>
+</html>
