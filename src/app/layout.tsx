@@ -14,10 +14,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sistema de Reservas Hoteleras | Teoría de Sistemas",
-  description: "Sistema integral de gestión hotelera basado en los principios de la Teoría de Sistemas: Holístico, Sinergia, Homeostasis, Entropía, Negentropía, Equifinalidad, Jerarquía, Organicidad, Multifinalidad y Adaptabilidad.",
-  keywords: ["Hotel", "Reservas", "Teoría de Sistemas", "Gestión Hotelera", "Check-in", "Check-out"],
-  authors: [{ name: "Sistema Hotelero" }],
+  title: "RHYNODE NEXUS | Sistema SaaS de Gestión Hotelera Premium",
+  description: "RHYNODE NEXUS es el Sistema SaaS de Gestión Hotelera más avanzado del mundo. Diseñado para cadenas de lujo, aplica la Teoría General de Sistemas con IA, IoT y Analytics en tiempo real.",
+  keywords: ["RHYNODE NEXUS", "SaaS Hotelero", "Gestión Hotelera", "Teoría de Sistemas", "Hotel Management System", "PMS Premium", "Reservas en Línea", "IoT Hotel", "IA Hotelera", "Dashboard Hotelero", "Check-in Digital", "Gestión de Habitaciones", "Revenue Management", "Hospitality Tech"],
+  authors: [{ name: "RHYNODE" }],
   icons: {
     icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏨</text></svg>",
   },

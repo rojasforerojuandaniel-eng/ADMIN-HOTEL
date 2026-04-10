@@ -58,8 +58,8 @@
   --popover: oklch(0.11 0.005 270);
   --popover-foreground: oklch(0.95 0.01 270);
   
-  /* Primary - Emerald accent (Linear-like) */
-  --primary: oklch(0.7 0.15 160);
+  /* Primary - Neon Cyan (RHYNODE NEXUS) */
+  --primary: oklch(0.75 0.2 190);
   --primary-foreground: oklch(0.09 0.005 270);
   
   --secondary: oklch(0.16 0.008 270);
@@ -305,6 +305,52 @@
 .status-maintenance {
   @apply bg-rose-500;
   box-shadow: 0 0 8px oklch(0.65 0.2 25 / 0.6);
+}
+
+/* ============================================
+   NEON COLORS (RHYNODE NEXUS)
+   ============================================ */
+
+.neon-cyan {
+  color: oklch(0.75 0.2 190);
+}
+
+.neon-violet {
+  color: oklch(0.7 0.25 290);
+}
+
+.neon-emerald {
+  color: oklch(0.75 0.2 160);
+}
+
+.bg-neon-cyan {
+  background-color: oklch(0.75 0.2 190);
+}
+
+.bg-neon-violet {
+  background-color: oklch(0.7 0.25 290);
+}
+
+.bg-neon-emerald {
+  background-color: oklch(0.75 0.2 160);
+}
+
+.border-neon-cyan {
+  border-color: oklch(0.75 0.2 190);
+}
+
+.border-neon-violet {
+  border-color: oklch(0.7 0.25 290);
+}
+
+.glow-neon-cyan {
+  box-shadow: 0 0 20px oklch(0.75 0.2 190 / 0.3),
+              0 0 40px oklch(0.75 0.2 190 / 0.2);
+}
+
+.glow-neon-violet {
+  box-shadow: 0 0 20px oklch(0.7 0.25 290 / 0.3),
+              0 0 40px oklch(0.7 0.25 290 / 0.2);
 }
 
 /* ============================================
