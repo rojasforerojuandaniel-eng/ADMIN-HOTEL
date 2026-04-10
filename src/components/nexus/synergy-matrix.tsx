@@ -244,8 +244,8 @@ export function SynergyMatrix() {
                           {/* Reservas */}
                           <AnimatePresence>
                             {roomReservations.map((reservation) => {
-                              const startDay = reservation.checkIn.getDate();
-                              const endDay = reservation.checkOut.getDate();
+                              const startDay = new Date(reservation.checkIn).getDate();
+                              const endDay = new Date(reservation.checkOut).getDate();
                               const days = endDay - startDay;
                               const left = ((startDay - 1) / daysInMonth) * 100;
                               const width = (days / daysInMonth) * 100;

@@ -254,7 +254,7 @@ export function OmniChannelInbox() {
                   <div className="text-center">
                     <p className="text-sm font-medium text-foreground">{reservation.room}</p>
                     <p className="text-[10px] text-muted-foreground">
-                      {reservation.checkIn.getDate()}/{reservation.checkIn.getMonth() + 1} - {reservation.checkOut.getDate()}/{reservation.checkOut.getMonth() + 1}
+                      {new Date(reservation.checkIn).getDate()}/{new Date(reservation.checkIn).getMonth() + 1} - {new Date(reservation.checkOut).getDate()}/{new Date(reservation.checkOut).getMonth() + 1}
                     </p>
                   </div>
 
