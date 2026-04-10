@@ -1,9 +1,8 @@
 // ============================================
-// RHYNODE NEXUS - ESTADO GLOBAL
+// RHYNODE NEXUS - ESTADO GLOBAL (SIN PERSIST)
 // ============================================
 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 
 // ============================================
 // TIPOS
@@ -25,8 +24,8 @@ export interface Reservation {
   guest: Guest;
   room: string;
   floor: number;
-  checkIn: Date;
-  checkOut: Date;
+  checkIn: string;
+  checkOut: string;
   status: 'confirmed' | 'pending' | 'checked_in' | 'checked_out' | 'cancelled';
   channel: 'booking' | 'airbnb' | 'web' | 'whatsapp' | 'phone';
   total: number;
@@ -56,8 +55,8 @@ export interface EntropyItem {
   severity: 'low' | 'medium' | 'high' | 'urgent';
   resolved: boolean;
   resolvedBy?: string;
-  resolvedAt?: Date;
-  timestamp: Date;
+  resolvedAt?: string;
+  timestamp: string;
 }
 
 export interface SystemMetric {
@@ -65,7 +64,7 @@ export interface SystemMetric {
   type: 'revpar' | 'occupancy' | 'revenue' | 'reservations' | 'satisfaction';
   value: number;
   change: number;
-  timestamp: Date;
+  timestamp: string;
 }
 
 export interface Branch {
@@ -80,43 +79,30 @@ export interface Branch {
 // ============================================
 
 interface NexusStore {
-  // Estado actual
   currentBranch: string;
   activeTab: string;
-  time: Date;
-
-  // Datos del sistema
+  time: string;
   branches: Branch[];
   rooms: Room[];
   reservations: Reservation[];
   entropyItems: EntropyItem[];
   metrics: SystemMetric[];
-
-  // Acciones
   setCurrentBranch: (branchId: string) => void;
   setActiveTab: (tab: string) => void;
   updateTime: () => void;
-
-  // Acciones de reservas
   addReservation: (reservation: Reservation) => void;
   updateReservationStatus: (id: string, status: Reservation['status']) => void;
-
-  // Acciones de habitaciones
   updateRoomStatus: (id: string, status: Room['status']) => void;
   toggleRoomLights: (id: string) => void;
   toggleRoomDND: (id: string) => void;
   updateRoomTemperature: (id: string, temp: number) => void;
-
-  // Acciones de entropía
   addEntropyItem: (item: Omit<EntropyItem, 'id' | 'resolved' | 'timestamp'>) => void;
   resolveEntropyItem: (id: string) => void;
-
-  // Acciones de métricas
   updateMetrics: () => void;
 }
 
 // ============================================
-// DATOS MOCK HIPER-REALISTAS
+// DATOS MOCK
 // ============================================
 
 const mockBranches: Branch[] = [
@@ -148,130 +134,84 @@ const mockRooms: Room[] = [
 ];
 
 const mockReservations: Reservation[] = [
-  { id: 'res1', code: 'RHN-2024-0847', guest: mockGuests[0], room: '102', floor: 1, checkIn: new Date('2024-12-20'), checkOut: new Date('2024-12-23'), status: 'checked_in', channel: 'web', total: 565320, paid: 565320, currency: 'COP' },
-  { id: 'res2', code: 'RHN-2024-0852', guest: mockGuests[1], room: '201', floor: 2, checkIn: new Date('2024-12-21'), checkOut: new Date('2024-12-25'), status: 'checked_in', channel: 'booking', total: 1878600, paid: 1878600, currency: 'COP' },
-  { id: 'res3', code: 'RHN-2024-0863', guest: mockGuests[2], room: '204', floor: 2, checkIn: new Date('2024-12-22'), checkOut: new Date('2024-12-26'), status: 'confirmed', channel: 'airbnb', total: 1517600, paid: 0, currency: 'COP' },
-  { id: 'res4', code: 'RHN-2024-0871', guest: mockGuests[3], room: '301', floor: 3, checkIn: new Date('2024-12-22'), checkOut: new Date('2024-12-28'), status: 'checked_in', channel: 'whatsapp', total: 6486800, paid: 6486800, currency: 'COP' },
-  { id: 'res5', code: 'RHN-2024-0878', guest: mockGuests[4], room: '303', floor: 3, checkIn: new Date('2024-12-23'), checkOut: new Date('2024-12-27'), status: 'pending', channel: 'phone', total: 1402000, paid: 0, currency: 'COP' },
+  { id: 'res1', code: 'RHN-2024-0847', guest: mockGuests[0], room: '102', floor: 1, checkIn: '2024-12-20', checkOut: '2024-12-23', status: 'checked_in', channel: 'web', total: 565320, paid: 565320, currency: 'COP' },
+  { id: 'res2', code: 'RHN-2024-0852', guest: mockGuests[1], room: '201', floor: 2, checkIn: '2024-12-21', checkOut: '2024-12-25', status: 'checked_in', channel: 'booking', total: 1878600, paid: 1878600, currency: 'COP' },
+  { id: 'res3', code: 'RHN-2024-0863', guest: mockGuests[2], room: '204', floor: 2, checkIn: '2024-12-22', checkOut: '2024-12-26', status: 'confirmed', channel: 'airbnb', total: 1517600, paid: 0, currency: 'COP' },
+  { id: 'res4', code: 'RHN-2024-0871', guest: mockGuests[3], room: '301', floor: 3, checkIn: '2024-12-22', checkOut: '2024-12-28', status: 'checked_in', channel: 'whatsapp', total: 6486800, paid: 6486800, currency: 'COP' },
+  { id: 'res5', code: 'RHN-2024-0878', guest: mockGuests[4], room: '303', floor: 3, checkIn: '2024-12-23', checkOut: '2024-12-27', status: 'pending', channel: 'phone', total: 1402000, paid: 0, currency: 'COP' },
 ];
 
 const mockEntropy: EntropyItem[] = [
-  { id: 'e1', type: 'maintenance', room: '302', description: 'Aire Acondicionado fallando (Reportado por IoT)', severity: 'high', resolved: false, timestamp: new Date(Date.now() - 3600000) },
-  { id: 'e2', type: 'cleaning_delay', room: '103', description: 'Limpieza habitación 103 atrasada 45 min', severity: 'medium', resolved: false, timestamp: new Date(Date.now() - 7200000) },
-  { id: 'e3', type: 'complaint', room: '201', description: 'Huésped VIP reporta ruido excesivo', severity: 'high', resolved: false, timestamp: new Date(Date.now() - 5400000) },
+  { id: 'e1', type: 'maintenance', room: '302', description: 'Aire Acondicionado fallando (Reportado por IoT)', severity: 'high', resolved: false, timestamp: new Date(Date.now() - 3600000).toISOString() },
+  { id: 'e2', type: 'cleaning_delay', room: '103', description: 'Limpieza habitación 103 atrasada 45 min', severity: 'medium', resolved: false, timestamp: new Date(Date.now() - 7200000).toISOString() },
+  { id: 'e3', type: 'complaint', room: '201', description: 'Huésped VIP reporta ruido excesivo', severity: 'high', resolved: false, timestamp: new Date(Date.now() - 5400000).toISOString() },
 ];
 
 const mockMetrics: SystemMetric[] = [
-  { id: 'm1', type: 'revpar', value: 285000, change: 7.5, timestamp: new Date() },
-  { id: 'm2', type: 'occupancy', value: 78, change: 8.3, timestamp: new Date() },
-  { id: 'm3', type: 'revenue', value: 12400000, change: 11.2, timestamp: new Date() },
-  { id: 'm4', type: 'reservations', value: 8, change: 33, timestamp: new Date() },
-  { id: 'm5', type: 'satisfaction', value: 94, change: 2.1, timestamp: new Date() },
+  { id: 'm1', type: 'revpar', value: 285000, change: 7.5, timestamp: new Date().toISOString() },
+  { id: 'm2', type: 'occupancy', value: 78, change: 8.3, timestamp: new Date().toISOString() },
+  { id: 'm3', type: 'revenue', value: 12400000, change: 11.2, timestamp: new Date().toISOString() },
+  { id: 'm4', type: 'reservations', value: 8, change: 33, timestamp: new Date().toISOString() },
+  { id: 'm5', type: 'satisfaction', value: 94, change: 2.1, timestamp: new Date().toISOString() },
 ];
 
 // ============================================
-// STORE CON PERSISTENCIA
+// STORE (SIN PERSIST - SIN PROBLEMAS SSR)
 // ============================================
 
-export const useNexusStore = create<NexusStore>()(
-  persist(
-    (set, get) => ({
-      // Estado inicial
-      currentBranch: 'bog',
-      activeTab: 'dashboard',
-      time: new Date(),
-      branches: mockBranches,
-      rooms: mockRooms,
-      reservations: mockReservations,
-      entropyItems: mockEntropy,
-      metrics: mockMetrics,
+export const useNexusStore = create<NexusStore>()((set) => ({
+  currentBranch: 'bog',
+  activeTab: 'dashboard',
+  time: new Date().toISOString(),
+  branches: mockBranches,
+  rooms: mockRooms,
+  reservations: mockReservations,
+  entropyItems: mockEntropy,
+  metrics: mockMetrics,
 
-      // Acciones
-      setCurrentBranch: (branchId) => set({ currentBranch: branchId }),
-      setActiveTab: (tab) => set({ activeTab: tab }),
-      updateTime: () => set({ time: new Date() }),
+  setCurrentBranch: (branchId) => set({ currentBranch: branchId }),
+  setActiveTab: (tab) => set({ activeTab: tab }),
+  updateTime: () => set({ time: new Date().toISOString() }),
 
-      // Reservas
-      addReservation: (reservation) => set((state) => ({
-        reservations: [...state.reservations, reservation],
-      })),
+  addReservation: (reservation) => set((state) => ({
+    reservations: [...state.reservations, reservation],
+  })),
 
-      updateReservationStatus: (id, status) => set((state) => ({
-        reservations: state.reservations.map((r) =>
-          r.id === id ? { ...r, status } : r
-        ),
-      })),
+  updateReservationStatus: (id, status) => set((state) => ({
+    reservations: state.reservations.map((r) => r.id === id ? { ...r, status } : r),
+  })),
 
-      // Habitaciones
-      updateRoomStatus: (id, status) => set((state) => ({
-        rooms: state.rooms.map((r) =>
-          r.id === id ? { ...r, status } : r
-        ),
-      })),
+  updateRoomStatus: (id, status) => set((state) => ({
+    rooms: state.rooms.map((r) => r.id === id ? { ...r, status } : r),
+  })),
 
-      toggleRoomLights: (id) => set((state) => ({
-        rooms: state.rooms.map((r) =>
-          r.id === id ? { ...r, lights: !r.lights } : r
-        ),
-      })),
+  toggleRoomLights: (id) => set((state) => ({
+    rooms: state.rooms.map((r) => r.id === id ? { ...r, lights: !r.lights } : r),
+  })),
 
-      toggleRoomDND: (id) => set((state) => ({
-        rooms: state.rooms.map((r) =>
-          r.id === id ? { ...r, dnd: !r.dnd } : r
-        ),
-      })),
+  toggleRoomDND: (id) => set((state) => ({
+    rooms: state.rooms.map((r) => r.id === id ? { ...r, dnd: !r.dnd } : r),
+  })),
 
-      updateRoomTemperature: (id, temp) => set((state) => ({
-        rooms: state.rooms.map((r) =>
-          r.id === id ? { ...r, temperature: temp } : r
-        ),
-      })),
+  updateRoomTemperature: (id, temp) => set((state) => ({
+    rooms: state.rooms.map((r) => r.id === id ? { ...r, temperature: temp } : r),
+  })),
 
-      // Entropía
-      addEntropyItem: (item) => set((state) => ({
-        entropyItems: [...state.entropyItems, {
-          ...item,
-          id: `e${Date.now()}`,
-          resolved: false,
-          timestamp: new Date(),
-        }],
-      })),
+  addEntropyItem: (item) => set((state) => ({
+    entropyItems: [...state.entropyItems, { ...item, id: `e${Date.now()}`, resolved: false, timestamp: new Date().toISOString() }],
+  })),
 
-      resolveEntropyItem: (id) => set((state) => ({
-        entropyItems: state.entropyItems.map((e) =>
-          e.id === id
-            ? { ...e, resolved: true, resolvedBy: 'AI Auto-Resolver', resolvedAt: new Date() }
-            : e
-        ),
-      })),
+  resolveEntropyItem: (id) => set((state) => ({
+    entropyItems: state.entropyItems.map((e) => e.id === id ? { ...e, resolved: true, resolvedBy: 'AI Auto-Resolver', resolvedAt: new Date().toISOString() } : e),
+  })),
 
-      // Métricas
-      updateMetrics: () => set((state) => ({
-        metrics: state.metrics.map((m) => ({
-          ...m,
-          value: m.value * (1 + Math.random() * 0.02 - 0.01),
-        })),
-      })),
-    }),
-    {
-      name: 'rhynode-nexus-storage',
-      storage: createJSONStorage(() => {
-        if (typeof window !== 'undefined') {
-          return localStorage;
-        }
-        return {
-          getItem: () => null,
-          setItem: () => {},
-          removeItem: () => {},
-        };
-      }),
-      skipHydration: true,
-    }
-  )
-);
+  updateMetrics: () => set((state) => ({
+    metrics: state.metrics.map((m) => ({ ...m, value: m.value * (1 + Math.random() * 0.02 - 0.01) })),
+  })),
+}));
 
 // ============================================
-// SELECTORES PERSONALIZADOS
+// SELECTORES
 // ============================================
 
 export const useCurrentBranch = () => useNexusStore((state) => {
@@ -284,17 +224,8 @@ export const useOccupancyRate = () => useNexusStore((state) => {
   return (occupied / state.rooms.length) * 100;
 });
 
-export const useRevenueToday = () => useNexusStore((state) => {
-  const today = new Date().toDateString();
-  return state.reservations
-    .filter((r) => r.checkIn.toDateString() === today)
-    .reduce((acc, r) => acc + r.total, 0);
-});
-
 export const useActiveReservations = () =>
-  useNexusStore((state) => state.reservations.filter((r) =>
-    ['confirmed', 'checked_in'].includes(r.status)
-  ));
+  useNexusStore((state) => state.reservations.filter((r) => ['confirmed', 'checked_in'].includes(r.status)));
 
 export const useUnresolvedEntropy = () =>
   useNexusStore((state) => state.entropyItems.filter((e) => !e.resolved));

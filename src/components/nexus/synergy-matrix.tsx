@@ -111,7 +111,7 @@ function ReservationBlock({ reservation, left, width }: ReservationBlockProps) {
                 <Clock className="w-3 h-3 text-muted-foreground" />
                 <span className="text-muted-foreground">Fechas:</span>
                 <span className="font-medium text-foreground">
-                  {reservation.checkIn.toLocaleDateString()} - {reservation.checkOut.toLocaleDateString()}
+                  {new Date(reservation.checkIn).toLocaleDateString()} - {new Date(reservation.checkOut).toLocaleDateString()}
                 </span>
               </div>
               <div className="flex items-center gap-2 text-xs">
