@@ -3,7 +3,7 @@
 // ============================================
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 // ============================================
 // TIPOS
@@ -255,6 +255,17 @@ export const useNexusStore = create<NexusStore>()(
     }),
     {
       name: 'rhynode-nexus-storage',
+      storage: createJSONStorage(() => {
+        if (typeof window !== 'undefined') {
+          return localStorage;
+        }
+        return {
+          getItem: () => null,
+          setItem: () => {},
+          removeItem: () => {},
+        };
+      }),
+      skipHydration: true,
     }
   )
 );
